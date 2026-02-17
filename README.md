@@ -37,6 +37,10 @@ export PATH="$HOME/.local/bin:$PATH"
 curl -fsSL https://raw.githubusercontent.com/hinkley-dev/mscrub/main/mscrub -o /usr/local/bin/mscrub && chmod +x /usr/local/bin/mscrub
 ```
 
+### Releases
+
+Versioned releases with the script attached as a download are available on the [releases page](https://github.com/hinkley-dev/mscrub/releases).
+
 ### From a cloned repo
 
 ```bash
