@@ -2,20 +2,21 @@
   "defaultCaseSensitive": false,
   "resolutions": [
     {
-      "description": "Company email addresses",
-      "find": "john@example.com",
+      "description": "Developer email address",
+      "find": "jsmith@acme.com",
       "replacement": "[REDACTED_EMAIL]"
     },
     {
-      "description": "Production database hostname - match exactly to avoid false positives",
-      "find": "prod-db-01",
-      "replacement": "[REDACTED_HOST]",
+      "description": "Internal project name",
+      "find": "apollo-backend",
+      "replacement": "[REDACTED_PROJECT]",
       "caseSensitive": true
     },
     {
-      "description": "API key leaked in stack traces",
-      "find": "secret-api-key-abc123",
-      "replacement": "[REDACTED_KEY]"
+      "description": "Developer username",
+      "find": "jsmith",
+      "replacement": "[REDACTED_USER]"
     }
   ]
 }
+
