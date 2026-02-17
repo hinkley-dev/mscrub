@@ -1,4 +1,4 @@
-# mscrub
+# mscrub (Message Scrub)
 Command line tool for scrubbing personal and proprietary details from text — useful for safely passing error messages and logs.
 
 ```
