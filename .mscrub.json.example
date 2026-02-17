@@ -7,8 +7,8 @@
       "replacement": "[REDACTED_EMAIL]"
     },
     {
-      "description": "Internal project name",
-      "find": "apollo-backend",
+      "description": "Internal project names",
+      "find": ["apollo-backend", "apollo-ui"],
       "replacement": "[REDACTED_PROJECT]",
       "caseSensitive": true
     },

@@ -178,21 +178,25 @@ for ((i=0; i<count; i++)); do
     enabled=$(jq -r "if .resolutions[$i].enabled == null then true else .resolutions[$i].enabled end" "$CONFIG_FILE")
     [[ "$enabled" == "false" ]] && continue
 
-    find_val=$(jq -r ".resolutions[$i].find // \"\"" "$CONFIG_FILE")
     replacement=$(jq -r ".resolutions[$i].replacement // \"\"" "$CONFIG_FILE")
     case_sensitive=$(jq -r --argjson def "$default_cs" "if .resolutions[$i].caseSensitive == null then \$def else .resolutions[$i].caseSensitive end" "$CONFIG_FILE")
+    find_count=$(jq ".resolutions[$i].find | if type == \"array\" then length else 1 end" "$CONFIG_FILE")
 
-    [[ -z "$find_val" ]] && continue
+    for ((j=0; j<find_count; j++)); do
+        find_val=$(jq -r ".resolutions[$i].find | if type == \"array\" then .[$j] else . end" "$CONFIG_FILE")
 
-    escaped_find=$(escape_sed_pattern "$find_val")
-    escaped_replacement=$(escape_sed_replacement "$replacement")
+        [[ -z "$find_val" ]] && continue
 
-    if [[ "$case_sensitive" == "true" ]]; then
-        sed "s|${escaped_find}|${escaped_replacement}|g" "$INPUT_TMP" > "$WORK_TMP"
-    else
-        sed "s|${escaped_find}|${escaped_replacement}|gI" "$INPUT_TMP" > "$WORK_TMP"
-    fi
-    cp "$WORK_TMP" "$INPUT_TMP"
+        escaped_find=$(escape_sed_pattern "$find_val")
+        escaped_replacement=$(escape_sed_replacement "$replacement")
+
+        if [[ "$case_sensitive" == "true" ]]; then
+            sed "s|${escaped_find}|${escaped_replacement}|g" "$INPUT_TMP" > "$WORK_TMP"
+        else
+            sed "s|${escaped_find}|${escaped_replacement}|gI" "$INPUT_TMP" > "$WORK_TMP"
+        fi
+        cp "$WORK_TMP" "$INPUT_TMP"
+    done
 done
 
 # Deliver output

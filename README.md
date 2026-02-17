@@ -129,7 +129,7 @@ mscrub looks for its config at `~/.mscrub.json` by default.
 
 | Property | Type | Required | Description |
 |----------|------|----------|-------------|
-| `find` | string | yes | The text to search for |
+| `find` | string or array | yes | The text to search for. An array can be used to map multiple values to the same replacement. |
 | `replacement` | string | yes | The text to replace it with |
 | `caseSensitive` | boolean | no | Overrides `defaultCaseSensitive` for this rule |
 | `enabled` | boolean | no | Set to `false` to disable the rule without deleting it (default: `true`) |
@@ -149,8 +149,8 @@ Rules are applied in order from top to bottom.
       "replacement": "[REDACTED_EMAIL]"
     },
     {
-      "description": "Internal project name",
-      "find": "apollo-backend",
+      "description": "Internal project names",
+      "find": ["apollo-backend", "apollo-ui"],
       "replacement": "[REDACTED_PROJECT]",
       "caseSensitive": true
     },
