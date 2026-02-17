@@ -7,7 +7,7 @@ OUTPUT_FILE=""
 
 usage() {
     cat <<'EOF'
-Usage: mscrub [OPTIONS] [INPUT]
+Usage: mscrub [OPTIONS] [INPUT] [OUTPUT]
        mscrub update
        mscrub config [-c file]
 
@@ -30,6 +30,7 @@ OPTIONS:
 EXAMPLES:
   mscrub "Error from user john@example.com on server prod-db-01"
   mscrub error.log
+  mscrub error.log scrubbed.log
   mscrub -o scrubbed.log error.log
   cat error.log | mscrub
 
@@ -138,6 +139,10 @@ if [[ $# -gt 0 ]]; then
         cp "$1" "$INPUT_TMP"
     else
         printf '%s' "$1" > "$INPUT_TMP"
+    fi
+    # Second positional arg is output file (only if -o was not already set)
+    if [[ $# -gt 1 && -z "$OUTPUT_FILE" ]]; then
+        OUTPUT_FILE="$2"
     fi
 elif [[ ! -t 0 ]]; then
     cat > "$INPUT_TMP"

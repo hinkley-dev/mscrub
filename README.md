@@ -88,6 +88,9 @@ mscrub "Error reported by jsmith on project apollo-backend"
 mscrub error.log
 
 # Scrub a log file and write the result to a new file
+mscrub error.log scrubbed.log
+
+# Same thing using the -o flag
 mscrub -o scrubbed.log error.log
 
 # Pipe input
