@@ -1,0 +1,21 @@
+{
+  "defaultCaseSensitive": false,
+  "resolutions": [
+    {
+      "description": "Company email addresses",
+      "find": "john@example.com",
+      "replacement": "[REDACTED_EMAIL]"
+    },
+    {
+      "description": "Production database hostname - match exactly to avoid false positives",
+      "find": "prod-db-01",
+      "replacement": "[REDACTED_HOST]",
+      "caseSensitive": true
+    },
+    {
+      "description": "API key leaked in stack traces",
+      "find": "secret-api-key-abc123",
+      "replacement": "[REDACTED_KEY]"
+    }
+  ]
+}

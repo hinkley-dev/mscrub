@@ -1,0 +1,197 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+VERSION="1.0.0"
+CONFIG_FILE="$HOME/.mscrub.json"
+OUTPUT_FILE=""
+
+usage() {
+    cat <<'EOF'
+Usage: mscrub [OPTIONS] [INPUT]
+       mscrub update
+       mscrub config [-c file]
+
+Scrub sensitive data from text using replacement rules in ~/.mscrub.json
+
+INPUT:
+  A file path (if the path exists) or a literal string.
+  If omitted, reads from stdin.
+
+SUBCOMMANDS:
+  update          Update mscrub to the latest version from GitHub
+  config          Print the current config file
+
+OPTIONS:
+  -o <file>       Write output to a file instead of stdout
+  -c <file>       Use a custom config file (default: ~/.mscrub.json)
+  -h, --help      Show this help
+  --version       Show version
+
+EXAMPLES:
+  mscrub "Error from user john@example.com on server prod-db-01"
+  mscrub error.log
+  mscrub -o scrubbed.log error.log
+  cat error.log | mscrub
+
+For full details on configuration and usage, see:
+  https://github.com/hinkley-dev/mscrub/blob/main/README.md
+EOF
+    exit 0
+}
+
+do_update() {
+    if ! command -v curl &>/dev/null; then
+        echo "Error: curl is required for updates but not installed." >&2
+        exit 1
+    fi
+
+    INSTALL_PATH=$(command -v mscrub || true)
+    if [[ -z "$INSTALL_PATH" ]]; then
+        echo "Error: Could not find mscrub on PATH." >&2
+        exit 1
+    fi
+
+    echo "Updating mscrub at $INSTALL_PATH..."
+
+    TMP=$(mktemp)
+    trap 'rm -f "$TMP"' EXIT
+
+    if ! curl -fsSL https://raw.githubusercontent.com/hinkley-dev/mscrub/main/mscrub -o "$TMP"; then
+        echo "Error: Failed to download update." >&2
+        exit 1
+    fi
+
+    if [[ -w "$INSTALL_PATH" ]]; then
+        cp "$TMP" "$INSTALL_PATH"
+        chmod +x "$INSTALL_PATH"
+    else
+        sudo cp "$TMP" "$INSTALL_PATH"
+        sudo chmod +x "$INSTALL_PATH"
+    fi
+
+    echo "Updated to $("$INSTALL_PATH" --version)"
+}
+
+do_config() {
+    echo "Reading from $CONFIG_FILE"
+    echo ""
+    jq '.' "$CONFIG_FILE"
+    echo ""
+}
+
+# Handle subcommands and long flags before getopts (which only supports short flags)
+[[ "${1:-}" == "update" ]] && { do_update; exit 0; }
+if [[ "${1:-}" == "config" ]]; then
+    shift
+    while getopts ":c:" opt; do
+        case $opt in
+            c) CONFIG_FILE="$OPTARG" ;;
+            :) echo "Error: Option -$OPTARG requires an argument." >&2; exit 1 ;;
+            \?) echo "Error: Unknown option: -$OPTARG" >&2; exit 1 ;;
+        esac
+    done
+    if [[ ! -f "$CONFIG_FILE" ]]; then
+        echo "Error: Config file not found: $CONFIG_FILE" >&2; exit 1
+    fi
+    do_config; exit 0
+fi
+for arg in "$@"; do
+    [[ "$arg" == "--help" ]]    && usage
+    [[ "$arg" == "--version" ]] && { echo "mscrub $VERSION"; exit 0; }
+done
+
+while getopts ":o:c:h" opt; do
+    case $opt in
+        o) OUTPUT_FILE="$OPTARG" ;;
+        c) CONFIG_FILE="$OPTARG" ;;
+        h) usage ;;
+        :) echo "Error: Option -$OPTARG requires an argument." >&2; exit 1 ;;
+        \?) echo "Error: Unknown option: -$OPTARG" >&2; exit 1 ;;
+    esac
+done
+shift $((OPTIND - 1))
+
+if [[ ! -f "$CONFIG_FILE" ]]; then
+    echo "Error: Config file not found: $CONFIG_FILE" >&2
+    echo "Create one with a 'resolutions' array. See the project README for the format." >&2
+    exit 1
+fi
+
+if ! command -v jq &>/dev/null; then
+    echo "Error: jq is required but not installed." >&2
+    echo "Install it from https://jqlang.github.io/jq/" >&2
+    exit 1
+fi
+
+if ! jq empty "$CONFIG_FILE" 2>/dev/null; then
+    echo "Error: Invalid JSON in config file: $CONFIG_FILE" >&2
+    exit 1
+fi
+
+# Two temp files: INPUT_TMP holds the current state, WORK_TMP is scratch for each sed pass
+INPUT_TMP=$(mktemp)
+WORK_TMP=$(mktemp)
+trap 'rm -f "$INPUT_TMP" "$WORK_TMP"' EXIT
+
+if [[ $# -gt 0 ]]; then
+    if [[ -f "$1" ]]; then
+        cp "$1" "$INPUT_TMP"
+    else
+        printf '%s' "$1" > "$INPUT_TMP"
+    fi
+elif [[ ! -t 0 ]]; then
+    cat > "$INPUT_TMP"
+else
+    echo "Error: No input provided. Pass a file path, a string, or pipe via stdin." >&2
+    exit 1
+fi
+
+# Escape characters that are special in a sed BRE pattern (using | as delimiter)
+escape_sed_pattern() {
+    printf '%s' "$1" | sed \
+        -e 's/\\/\\\\/g' \
+        -e 's/\./\\./g' \
+        -e 's/\*/\\*/g' \
+        -e 's/\[/\\[/g' \
+        -e 's/\^/\\^/g' \
+        -e 's/\$/\\$/g' \
+        -e 's/|/\\|/g'
+}
+
+# Escape characters that are special in a sed replacement string (using | as delimiter)
+escape_sed_replacement() {
+    printf '%s' "$1" | sed \
+        -e 's/\\/\\\\/g' \
+        -e 's/&/\\&/g' \
+        -e 's/|/\\|/g'
+}
+
+default_cs=$(jq -r '.defaultCaseSensitive // true' "$CONFIG_FILE")
+count=$(jq '.resolutions | length' "$CONFIG_FILE")
+
+for ((i=0; i<count; i++)); do
+    find_val=$(jq -r ".resolutions[$i].find // \"\"" "$CONFIG_FILE")
+    replacement=$(jq -r ".resolutions[$i].replacement // \"\"" "$CONFIG_FILE")
+    case_sensitive=$(jq -r --argjson def "$default_cs" ".resolutions[$i].caseSensitive // \$def" "$CONFIG_FILE")
+
+    [[ -z "$find_val" ]] && continue
+
+    escaped_find=$(escape_sed_pattern "$find_val")
+    escaped_replacement=$(escape_sed_replacement "$replacement")
+
+    if [[ "$case_sensitive" == "true" ]]; then
+        sed "s|${escaped_find}|${escaped_replacement}|g" "$INPUT_TMP" > "$WORK_TMP"
+    else
+        sed "s|${escaped_find}|${escaped_replacement}|gI" "$INPUT_TMP" > "$WORK_TMP"
+    fi
+    cp "$WORK_TMP" "$INPUT_TMP"
+done
+
+# Deliver output
+if [[ -n "$OUTPUT_FILE" ]]; then
+    cp "$INPUT_TMP" "$OUTPUT_FILE"
+    echo "Written to: $OUTPUT_FILE" >&2
+else
+    cat "$INPUT_TMP"
+    echo
+fi
