@@ -171,13 +171,13 @@ escape_sed_replacement() {
         -e 's/|/\\|/g'
 }
 
-default_cs=$(jq -r '.defaultCaseSensitive // true' "$CONFIG_FILE")
+default_cs=$(jq -r 'if .defaultCaseSensitive == null then true else .defaultCaseSensitive end' "$CONFIG_FILE")
 count=$(jq '.resolutions | length' "$CONFIG_FILE")
 
 for ((i=0; i<count; i++)); do
     find_val=$(jq -r ".resolutions[$i].find // \"\"" "$CONFIG_FILE")
     replacement=$(jq -r ".resolutions[$i].replacement // \"\"" "$CONFIG_FILE")
-    case_sensitive=$(jq -r --argjson def "$default_cs" ".resolutions[$i].caseSensitive // \$def" "$CONFIG_FILE")
+    case_sensitive=$(jq -r --argjson def "$default_cs" "if .resolutions[$i].caseSensitive == null then \$def else .resolutions[$i].caseSensitive end" "$CONFIG_FILE")
 
     [[ -z "$find_val" ]] && continue
 
