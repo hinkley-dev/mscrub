@@ -93,6 +93,11 @@ mscrub -o scrubbed.log error.log
 # Pipe input
 cat error.log | mscrub
 
+# Paste a multi-line error message directly (single quotes around EOF prevent special characters being interpreted)
+mscrub << 'EOF'
+paste your error here
+EOF
+
 # Use a custom config file
 mscrub -c ~/work/.mscrub.json error.log
 ```
