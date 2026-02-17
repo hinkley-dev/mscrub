@@ -16,6 +16,12 @@
       "description": "Developer username",
       "find": "jsmith",
       "replacement": "[REDACTED_USER]"
+    },
+    {
+      "description": "Old hostname - disabled until needed",
+      "find": "dev-server-02",
+      "replacement": "[REDACTED_HOST]",
+      "enabled": false
     }
   ]
 }

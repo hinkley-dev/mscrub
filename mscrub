@@ -175,6 +175,9 @@ default_cs=$(jq -r 'if .defaultCaseSensitive == null then true else .defaultCase
 count=$(jq '.resolutions | length' "$CONFIG_FILE")
 
 for ((i=0; i<count; i++)); do
+    enabled=$(jq -r "if .resolutions[$i].enabled == null then true else .resolutions[$i].enabled end" "$CONFIG_FILE")
+    [[ "$enabled" == "false" ]] && continue
+
     find_val=$(jq -r ".resolutions[$i].find // \"\"" "$CONFIG_FILE")
     replacement=$(jq -r ".resolutions[$i].replacement // \"\"" "$CONFIG_FILE")
     case_sensitive=$(jq -r --argjson def "$default_cs" "if .resolutions[$i].caseSensitive == null then \$def else .resolutions[$i].caseSensitive end" "$CONFIG_FILE")

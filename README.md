@@ -132,6 +132,7 @@ mscrub looks for its config at `~/.mscrub.json` by default.
 | `find` | string | yes | The text to search for |
 | `replacement` | string | yes | The text to replace it with |
 | `caseSensitive` | boolean | no | Overrides `defaultCaseSensitive` for this rule |
+| `enabled` | boolean | no | Set to `false` to disable the rule without deleting it (default: `true`) |
 | `description` | string | no | Human-readable note about what this rule scrubs. Not used by the tool. |
 
 Rules are applied in order from top to bottom.
