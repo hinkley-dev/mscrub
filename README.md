@@ -70,13 +70,22 @@ mscrub [OPTIONS] [INPUT]
 - A literal string — passed directly
 - Omitted — reads from stdin
 
+**SUBCOMMANDS:**
+
+| Subcommand | Description |
+|------------|-------------|
+| `mscrub update` | Update mscrub to the latest version from GitHub |
+| `mscrub config` | Print the current config file |
+| `mscrub config -c <file>` | Print a specific config file |
+
 **OPTIONS:**
 
 | Flag | Description |
 |------|-------------|
 | `-o <file>` | Write output to a file instead of stdout |
 | `-c <file>` | Use a custom config file (default: `~/.mscrub.json`) |
-| `-h` | Show help |
+| `-h`, `--help` | Show help |
+| `--version` | Show the current version |
 
 ### Examples
 

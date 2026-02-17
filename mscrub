@@ -18,8 +18,8 @@ INPUT:
   If omitted, reads from stdin.
 
 SUBCOMMANDS:
-  update          Update mscrub to the latest version from GitHub
-  config          Print the current config file
+  update              Update mscrub to the latest version from GitHub
+  config [-c file]    Print the current config file (respects -c)
 
 OPTIONS:
   -o <file>       Write output to a file instead of stdout
